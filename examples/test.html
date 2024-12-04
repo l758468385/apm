@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Network Monitor Test</title>
+  <script src="/examples/dist/network-monitor.min.js"></script>
+  <style>
+   /* .loading-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  */
+    /* 用于测试的样式 */
+    .hidden-content {
+      display: none;
+    }
+
+    .delayed-content {
+      opacity: 0;
+      transition: opacity 1s;
+    }
+  </style>
+  <script>
+    networkMonitor.init({
+      aid: 'test-aid',
+      token: 'test-token',
+      reportUrl: 'http://localhost:3000/collect',
+      sampleRate: {
+        performance: 1,
+        resource: 0.5,
+        resourceError: 1,
+        jsError: 1,
+        http: 0.3,
+        blankScreen: 1
+      },
+      debug: true
+    });
+  </script>
+</head>
+<body>
+  <!-- 测试场景1: Loading遮罩导致的白屏 -->
+  <div id="loading" class="loading-container">
+    Loading...
+  </div>
+
+  <!-- 测试场景2: 延迟显示内容 -->
+  <div id="delayed-content" class="delayed-content">
+    <h1>Network Monitor Test Page</h1>
+    <p>This content will appear after 3 seconds</p>
+  </div>
+
+  <!-- 测试场景3: JS报错 -->
+  <div id="error-content"></div>
+  
+  <!-- 修改: 添加几个不同类型的错误测试按钮 -->
+  <button onclick="triggerSyntaxError()">语法错误</button>
+  <button onclick="triggerTypeError()">类型错误</button>
+  <button onclick="triggerReferenceError()">引用错误</button>
+  <button onclick="triggerPromiseError()">Promise错误</button>
+
+  <script>
+    // 测试各种错误场景
+    function triggerSyntaxError() {
+      eval('const let = 1;'); // 语法错误
+    }
+
+    function triggerTypeError() {
+      const obj = null;
+      obj.someMethod(); // 类型错误
+    }
+
+    function triggerReferenceError() {
+      nonExistentFunction(); // 引用错误
+    }
+
+    function triggerPromiseError() {
+      new Promise((resolve, reject) => {
+        reject(new Error('Promise rejected')); // Promise 错误
+      });
+    }
+  </script>
+</body>
+</html> 
