@@ -1,17 +1,20 @@
-import { Config } from '../types/config';
-import { BatchReporter } from '../reporters/BatchReporter';
-import { 
-  PerformanceObserver,
-  ResourceObserver,
+import { Config } from "../types/config";
+import { BatchReporter } from "../reporters/BatchReporter";
+import {
+  WebVitalsObserver,
+  NavigationTimingObserver,
+  ResourceLoadObserver,
+  ResourceErrorObserver,
   ErrorObserver,
   HttpObserver,
-  BlankScreenObserver
-} from '../observers';
+  BlankScreenObserver,
+} from "../observers";
+import { BaseObserver } from "../observers/BaseObserver";
 
 export class NetworkMonitor {
   private config: Config;
   private reporter: BatchReporter;
-  private observers: any[] = [];
+  private observers: BaseObserver[] = [];
   private _started: boolean = false;
 
   constructor(config: Config) {
@@ -22,11 +25,13 @@ export class NetworkMonitor {
 
   private initObservers() {
     this.observers = [
-      new PerformanceObserver(this.reporter),
-      new ResourceObserver(this.reporter),
+      new WebVitalsObserver(this.reporter),
+      new NavigationTimingObserver(this.reporter),
+      new ResourceLoadObserver(this.reporter),
+      new ResourceErrorObserver(this.reporter),
       new ErrorObserver(this.reporter),
       new HttpObserver(this.reporter),
-      new BlankScreenObserver(this.reporter)
+      new BlankScreenObserver(this.reporter),
     ];
   }
 
@@ -36,18 +41,21 @@ export class NetworkMonitor {
 
     this.reporter.setupUnloadHandler();
 
-    this.observers.forEach(observer => {
+    this.observers.forEach((observer) => {
       try {
         observer.observe();
       } catch (error) {
         if (this.config.debug) {
-          console.error('[NetworkMonitor] Failed to initialize observer:', error);
+          console.error(
+            "[NetworkMonitor] Failed to initialize observer:",
+            error
+          );
         }
       }
     });
   }
 
   public stop() {
-    this.observers.forEach(observer => observer.disconnect());
+    this.observers.forEach((observer) => observer.disconnect());
   }
-} 
+}

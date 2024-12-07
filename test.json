@@ -1,0 +1,138 @@
+{
+  "common": {
+      "user_id": "abc@gmail.com",
+      "url": "http://wshop.test/products/ttdeye-iris-grey-blue-ii-colored-contact-lenses?bac=zzzz&fbclid=fb.1.123456666666",
+      "ts": 1727423122846,
+      "pathname": "/products/ttdeye-iris-grey-blue-ii-colored-contact-lenses",
+      "view_id": "products/ttdeye-iris-grey-blue-ii-colored-contact-lenses_1727423123107",
+      "network_type": "4g",
+      "_lfutma": "77780b0e61b6be18fb466877db365919.72580ad9-8bde-4311-ae9e-209f507271a6.1732088091658.1732088091658.1732088091658.1",
+      "_lfutmb": "77780b0e61b6be18fb466877db365919.1732088091658.1732088091659",
+      "_lfutmc": "77780b0e61b6be18fb466877db365919"
+  },
+  "batch": [
+      {
+          "sample_rate": 0.5,
+          "type": "resource",
+          "ts": 1727423122846,
+          "payload": {
+              "type": "script",
+              "url": "https://connect.facebook.net/en_US/fbevents.js",
+              "status_code": 200,
+              "timing": {
+                  "name": "https://connect.facebook.net/en_US/fbevents.js",
+                  "entryType": "resource",
+                  "startTime": 1055.7000000476837,
+                  "duration": 530.0999999046326, // 资源的加载时长，从开始加载到完成所用的时间
+                  "initiatorType": "script", // 资源的启动者类型
+                  "deliveryType": "", // 用于标识资源的加载方式，比如缓存或网络加载
+                  "nextHopProtocol": "h3", // 表示用于传输资源的下一跳协议（HTTP/3）
+                  "renderBlockingStatus": "non-blocking", // 表示该资源是否阻塞渲染
+                  "workerStart": 0, // 如果该资源由Service Worker处理，则会标记Service Worker的启动时间
+                  "redirectStart": 0, // 资源重定向开始时间
+                  "redirectEnd": 0, // 资源重定向结束时间
+                  "fetchStart": 1055.7000000476837, // 浏览器开始请求资源的时间
+                  "domainLookupStart": 1165.7000000476837, // 域名解析的开始时间, 可以用来计算DNS解析时间
+                  "domainLookupEnd": 1172.5, // 域名解析的结束时间, 可以用来计算DNS解析时间
+                  "connectStart": 1172.5, // 连接建立的开始时间，计算TCP连接的时间。
+                  "connectEnd": 1360.4000000953674, // 连接建立的结束时间，计算TCP连接的时间。
+                  "secureConnectionStart": 1176.5, // 安全连接（TLS/SSL）的握手开始时间
+                  "requestStart": 1179.7000000476837, // 浏览器向服务器发出请求的时间点。
+                  "responseStart": 1361.2000000476837, // 服务器开始响应的时间点，也就是浏览器收到第一个字节的时间
+                  "firstInterimResponseStart": 0, // 表示浏览器接收到的第一个中间响应的时间
+                  "responseEnd": 1585.7999999523163, // 资源下载完成的时间点，表示浏览器成功收到完整资源的时间
+                  "transferSize": 59370, // 资源的传输大小，单位是字节
+                  "encodedBodySize": 59070, // 编码后的资源大小（例如压缩后），仅包含资源正文的字节数，不包含响应头。
+                  "decodedBodySize": 231356, // 解码后的资源大小，表示浏览器解压缩后的资源体积
+                  "responseStatus": 0, // 表示HTTP响应的状态码
+                  "serverTiming": [] // 用于记录服务器返回的定时数据，常用于监控服务器端性能    
+              }
+          }
+      },
+      {
+          "sample_rate": 1,
+          "type": "js_error",
+          "ts": 1727423122846,
+          "payload": {
+              // 错误信息
+              "error": {
+                  "name": "ChunkLoadError",
+                  "message": "Loading chunk mixChunk|athena/js/modules/contrastImage failed.\n(error: http://wshop.test/athena/js/modules/contrastImage.js)",
+                  "stack": "ChunkLoadError\n    at __webpack_require__.f.j (http://wshop.test/athena/js/app.js:47847:29)\n    at http://wshop.test/athena/js/app.js:47636:40\n    at Array.reduce (<anonymous>)\n    at __webpack_require__.e (http://wshop.test/athena/js/app.js:47635:67)\n    at contrastImage (http://wshop.test/athena/js/app.js:21262:46)\n    at __webpack_modules__../resources/views/athena/js/app.js.window.loadModule (http://wshop.test/athena/js/app.js:21281:24)\n    at runAndRenderModule (http://wshop.test/:1999:31)\n    at http://wshop.test/:2089:26\n    at http://wshop.test/:1732:15"
+              },
+              "source": {
+                  "type": "onunhandledrejection"
+              }
+          }
+      },
+      {
+          "sample_rate": 1,
+          "type": "blank_screen",
+          "ts": 1727423122836,
+          "payload": {
+          }
+      },
+      {
+          "sample_rate": 0.75,
+          "type": "http",
+          "ts": 1727434214135,
+          "payload": {
+              "type": "fetch",
+              "url": "http://wshop.test/api/v2/store/recommended-products?ids=192471&page=1",
+              "status_code": 200,
+              "method": "get",
+              "request": {
+                  "method": "get",
+                  "timestamp": 1727434214132,
+                  "url": "http://wshop.test/api/v2/store/recommended-products?ids=192471&page=1",
+                  "headers": {
+                      "content-type": "application/json",
+                      "x-lang": "en-US"
+                  }
+              },
+              "response": {
+                  "status": 200,
+                  "timestamp": 1727434216332,
+                  "headers": {
+                      "cache-control": "no-cache, private",
+                      "connection": "keep-alive",
+                      "content-type": "application/json",
+                      "date": "Fri, 27 Sep 2024 10:50:16 GMT",
+                      "etag": "\"4abd75fb65a9b4d22cbbb8d167b656aa459127d9\"",
+                      "server": "nginx/1.15.11",
+                      "transfer-encoding": "chunked",
+                      "x-powered-by": "PHP/7.4.3"
+                  }
+              },
+              "timing": {
+                  "name": "http://wshop.test/api/v2/store/recommended-products?ids=192471&page=1",
+                  "entryType": "resource",
+                  "startTime": 8575.899999856949,
+                  "duration": 2206.600000143051,
+                  "initiatorType": "fetch",
+                  "deliveryType": "",
+                  "nextHopProtocol": "http/1.1",
+                  "renderBlockingStatus": "non-blocking",
+                  "workerStart": 0,
+                  "redirectStart": 0,
+                  "redirectEnd": 0,
+                  "fetchStart": 8575.899999856949,
+                  "domainLookupStart": 8575.899999856949,
+                  "domainLookupEnd": 8575.899999856949,
+                  "connectStart": 8575.899999856949,
+                  "secureConnectionStart": 0,
+                  "connectEnd": 8575.899999856949,
+                  "requestStart": 8765.399999856949,
+                  "responseStart": 10770.099999904633,
+                  "firstInterimResponseStart": 0,
+                  "responseEnd": 10782.5,
+                  "transferSize": 49358,
+                  "encodedBodySize": 49058,
+                  "decodedBodySize": 49058,
+                  "responseStatus": 200,
+                  "serverTiming": []
+              }    
+          }
+      }
+  ]
+}

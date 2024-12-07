@@ -4,9 +4,13 @@ import { Event } from '../types/event';
 
 export class BlankScreenObserver extends BaseObserver {
   private timer: number | null = null;
+  private mutationObserver: MutationObserver | null = null;
   private checkPoints: { x: number; y: number }[] = [];
   private wrapperElements = ['html', 'body', '#app', '#root', '.container', '.content'];
   private emptyPoints = 0;
+  private hasReported = false;
+  private checkCount = 0;
+  private readonly MAX_CHECK_TIMES = 5;  // 最多检测5次
 
   constructor(reporter: BatchReporter) {
     super(reporter);
@@ -44,6 +48,13 @@ export class BlankScreenObserver extends BaseObserver {
   }
 
   private check() {
+    // 如果已经报告过或者超过最大检测次数，就不再检测
+    if (this.hasReported || this.checkCount >= this.MAX_CHECK_TIMES) {
+      this.disconnect();
+      return;
+    }
+
+    this.checkCount++;
     this.timer = window.setTimeout(() => {
       this.emptyPoints = 0;
       let hasValidContent = false;
@@ -54,7 +65,6 @@ export class BlankScreenObserver extends BaseObserver {
         if (elements.length === 0) continue;
 
         const element = elements[0];
-        // 改进检测逻辑
         if (this.isWrapper(element)) {
           this.emptyPoints++;
         } else if (this.isValidContent(element)) {
@@ -63,41 +73,48 @@ export class BlankScreenObserver extends BaseObserver {
         }
       }
 
-      // 只有在没有有效内容且空点数超过阈值时才报告白屏
       if (!hasValidContent && this.emptyPoints > 16) {
         this.reportBlankScreen();
+        this.hasReported = true;
+        this.disconnect();
+      } else if (this.checkCount < this.MAX_CHECK_TIMES) {
+        // 如果还没到最大检测次数，继续检测
+        this.check();
       }
-    }, 1000); // 缩短到1秒
+    }, 1000 * this.checkCount); // 逐渐增加检测间隔
   }
 
   public observe(): void {
     const startObserve = () => {
       if (document.body) {
-        const observer = new MutationObserver(() => {
-          if (this.timer) {
-            window.clearTimeout(this.timer);
-          }
+        // 等待资源加载完成后再开始检测
+        window.addEventListener('load', () => {
+          this.mutationObserver = new MutationObserver(() => {
+            // 使用防抖，避免频繁触发
+            if (this.timer) {
+              window.clearTimeout(this.timer);
+            }
+            // 延迟 500ms 再检测，避免瞬态变化
+            this.timer = window.setTimeout(() => this.check(), 500);
+          });
+
+          this.mutationObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            characterData: true
+          });
+
+          // 初始检测
           this.check();
         });
-
-        observer.observe(document.body, {
-          childList: true,
-          subtree: true,
-          attributes: true,
-          characterData: true
-        });
-
-        // 初始检测
-        this.check();
       }
     };
 
-    // 如果 body 已经存在，直接开始观察
-    if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    if (document.readyState === 'complete') {
       startObserve();
     } else {
-      // 否则等待 DOM 加载完成
-      window.addEventListener('DOMContentLoaded', startObserve);
+      window.addEventListener('load', startObserve);
     }
   }
 
@@ -105,6 +122,10 @@ export class BlankScreenObserver extends BaseObserver {
     if (this.timer) {
       window.clearTimeout(this.timer);
       this.timer = null;
+    }
+    if (this.mutationObserver) {
+      this.mutationObserver.disconnect();
+      this.mutationObserver = null;
     }
   }
 

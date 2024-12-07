@@ -68,6 +68,8 @@ export class BatchReporter {
   }
 
   public push(event: Event) {
+   
+
     const prevSendTime = Number(getCookie('lf_prev_send_time')) || Date.now();
     const currentTime = Date.now();
     if (currentTime - prevSendTime > 1800000) {
@@ -142,5 +144,13 @@ export class BatchReporter {
 
   public getConfig(): Config {
     return this.config;
+  }
+
+  private sendBeforeUnload(event: Event): void {
+    const data = {
+      common: this.getCommonInfo(),
+      batch: [event]
+    };
+    navigator.sendBeacon(this.config.reportUrl, JSON.stringify(data));
   }
 } 

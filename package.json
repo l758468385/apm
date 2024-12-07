@@ -4,10 +4,11 @@
   "description": "A network quality monitoring SDK",
   "main": "dist/network-monitor.min.js",
   "scripts": {
-    "dev": "webpack --config examples/webpack.dev.js --watch",
-    "serve": "ts-node examples/server.ts",
+    "build": "webpack --config webpack.config.js",
+    "dev": "webpack --config webpack.config.js --watch",
+    "serve": "npx ts-node examples/server.ts",
     "dev:all": "concurrently \"npm run dev\" \"npm run serve\"",
-    "start:example": "npm run dev:all"
+    "start": "npm run dev:all"
   },
   "keywords": [
     "monitoring",
@@ -17,7 +18,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "md5": "^2.3.0"
+    "md5": "^2.3.0",
+    "web-vitals": "^3.5.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",

@@ -1,106 +1,152 @@
 import { BaseObserver } from './BaseObserver';
-import { Event } from '../types/event';
 
 export class HttpObserver extends BaseObserver {
-  private originalFetch!: typeof window.fetch;
-  private originalXHR!: typeof window.XMLHttpRequest;
-
   public observe(): void {
-    this.interceptFetch();
     this.interceptXHR();
+    this.interceptFetch();
   }
 
-  private interceptFetch() {
-    this.originalFetch = window.fetch;
-    const newFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      const startTime = Date.now();
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-
-      if (url === this.config.reportUrl) {
-        return this.originalFetch.call(window, input, init);
-      }
-
-      try {
-        const response = await this.originalFetch.call(window, input, init);
-        this.reportHttpEvent('fetch', url, response.status, startTime, Date.now(), init?.method || 'GET');
-        return response;
-      } catch (error) {
-        this.reportHttpEvent('fetch', url, 0, startTime, Date.now(), init?.method || 'GET');
-        throw error;
-      }
-    };
-    window.fetch = newFetch;
-  }
-
-  private interceptXHR() {
-    this.originalXHR = window.XMLHttpRequest;
+  private interceptXHR(): void {
+    const originalXHR = window.XMLHttpRequest;
     const self = this;
 
     interface ExtendedXMLHttpRequest extends XMLHttpRequest {
       _method?: string;
+      _requestHeaders?: Record<string, string>;
       _url?: string;
     }
 
-    window.XMLHttpRequest = function(this: ExtendedXMLHttpRequest) {
-      const xhr = new self.originalXHR() as ExtendedXMLHttpRequest;
+    window.XMLHttpRequest = function() {
+      const xhr = new originalXHR() as ExtendedXMLHttpRequest;
       const startTime = Date.now();
-
+      
       const originalOpen = xhr.open;
-      xhr.open = function(method: string, ...args: any[]) {
+      xhr.open = function(method: string, url: string | URL, async?: boolean, username?: string, password?: string) {
         xhr._method = method;
-        xhr._url = args[0];
-        const [url = '', async = true, username, password] = args;
-        const params = [method, url, async, username, password].slice(0, 5) as [
-          string,
-          string | URL,
-          boolean,
-          (string | null | undefined)?,
-          (string | null | undefined)?
-        ];
-        return originalOpen.apply(this, params);
+        xhr._url = url.toString();
+        return originalOpen.call(this, method, url, async ?? true, username, password);
       };
 
-      xhr.addEventListener('load', () => {
-        if (xhr._url !== self.config.reportUrl) {
-          self.reportHttpEvent('xhr', xhr.responseURL, xhr.status, startTime, Date.now(), xhr._method || 'GET');
-        }
-      });
+      const originalSetRequestHeader = xhr.setRequestHeader;
+      xhr._requestHeaders = {};
+      xhr.setRequestHeader = function(name: string, value: string) {
+        xhr._requestHeaders![name.toLowerCase()] = value;
+        return originalSetRequestHeader.call(this, name, value);
+      };
 
-      xhr.addEventListener('error', () => {
-        if (xhr._url !== self.config.reportUrl) {
-          self.reportHttpEvent('xhr', xhr.responseURL, 0, startTime, Date.now(), xhr._method || 'GET');
-        }
+      xhr.addEventListener('loadend', function() {
+        const responseHeaders: Record<string, string> = {};
+        xhr.getAllResponseHeaders().split('\r\n').forEach(line => {
+          const [name, value] = line.split(': ');
+          if (name) {
+            responseHeaders[name.toLowerCase()] = value;
+          }
+        });
+
+        const timing = performance.getEntriesByName(xhr._url || '', 'resource')[0] as PerformanceResourceTiming;
+
+        self.reporter.push({
+          type: 'http',
+          payload: {
+            type: 'xhr',
+            url: xhr._url,
+            status_code: xhr.status,
+            request: {
+              method: xhr._method?.toLowerCase() || 'get',
+              timestamp: startTime,
+              url: xhr._url,
+              headers: xhr._requestHeaders
+            },
+            response: {
+              status: xhr.status,
+              timestamp: Date.now(),
+              headers: responseHeaders
+            },
+            timing: timing ? timing.toJSON() : {
+              startTime: startTime,
+              duration: Date.now() - startTime
+            }
+          },
+          sample_rate: self.config.sampleRate.http,
+          ts: Date.now()
+        });
       });
 
       return xhr;
     } as any;
   }
 
-  private reportHttpEvent(type: string, url: string, status: number, startTime: number, endTime: number, method: string) {
-    const event: Event = {
-      type: 'http',
-      payload: {
-        type,
-        url,
-        status_code: status,
-        method: method.toLowerCase(),
-        timing: {
-          startTime,
-          duration: endTime - startTime
-        }
-      },
-      sample_rate: this.config.sampleRate.http,
-      ts: Date.now()
-    };
-    this.reporter.push(event);
-  }
+  private interceptFetch(): void {
+    const originalFetch = window.fetch;
+    const self = this;
 
-  public disconnect(): void {
-    if (this.originalFetch) {
-      window.fetch = this.originalFetch;
-    }
-    if (this.originalXHR) {
-      window.XMLHttpRequest = this.originalXHR;
-    }
+    window.fetch = async function(input: URL | RequestInfo, init?: RequestInit) {
+      const startTime = Date.now();
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      
+      try {
+        const response = await originalFetch(input, init);
+        const responseHeaders: Record<string, string> = {};
+        response.headers.forEach((value, name) => {
+          responseHeaders[name.toLowerCase()] = value;
+        });
+
+        const timing = performance.getEntriesByName(url, 'resource')[0] as PerformanceResourceTiming;
+
+        self.reporter.push({
+          type: 'http',
+          payload: {
+            type: 'fetch',
+            url: url,
+            status_code: response.status,
+            method: (init?.method || 'get').toLowerCase(),
+            request: {
+              method: (init?.method || 'get').toLowerCase(),
+              timestamp: startTime,
+              url: url,
+              headers: init?.headers ? Object.fromEntries(
+                Object.entries(init.headers).map(([k, v]) => [k.toLowerCase(), v])
+              ) : {}
+            },
+            response: {
+              status: response.status,
+              timestamp: Date.now(),
+              headers: responseHeaders
+            },
+            timing: timing ? timing.toJSON() : {
+              startTime: startTime,
+              duration: Date.now() - startTime
+            }
+          },
+          sample_rate: self.config.sampleRate.http,
+          ts: Date.now()
+        });
+
+        return response;
+      } catch (error) {
+        // 请求失败时也需要上报
+        self.reporter.push({
+          type: 'http',
+          payload: {
+            type: 'fetch',
+            url: url,
+            status_code: 0,
+            method: (init?.method || 'get').toLowerCase(),
+            request: {
+              method: (init?.method || 'get').toLowerCase(),
+              timestamp: startTime,
+              url: url,
+              headers: init?.headers ? Object.fromEntries(
+                Object.entries(init.headers).map(([k, v]) => [k.toLowerCase(), v])
+              ) : {}
+            },
+            error: error instanceof Error ? error.message : String(error)
+          },
+          sample_rate: self.config.sampleRate.http,
+          ts: Date.now()
+        });
+        throw error;
+      }
+    } as typeof window.fetch;
   }
 } 

@@ -11,5 +11,8 @@ export abstract class BaseObserver {
   }
 
   abstract observe(): void;
-  abstract disconnect(): void;
+  
+  public disconnect(): void {
+    // 默认实现，子类可以覆盖
+  }
 } 

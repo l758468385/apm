@@ -1,52 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Network Monitor Test</title>
-  <script src="/examples/dist/network-monitor.min.js"></script>
-  <style>
-    /* 白屏测试样式 */
-    .loading-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-
-    .delayed-content {
-      opacity: 0;
-      transition: opacity 1s;
-    }
-
-    /* 性能测试样式 */
-    .heavy-animation {
-      width: 100px;
-      height: 100px;
-      background: red;
-      animation: move 2s infinite;
-    }
-
-    @keyframes move {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(200px); }
-    }
-
-    /* 布局测试样式 */
-    .layout-shift {
-      margin-top: 20px;
-      height: 50px;
-    }
-  </style>
+  <title>性能监控测试页面</title>
+  <script src="/dist/network-monitor.min.js"></script>
   <script>
+    // 初始化监控
     networkMonitor.init({
       aid: 'test-aid',
       token: 'test-token',
-      reportUrl: 'http://localhost:3000/collect',
+      reportUrl: 'http://localhost:3333/collect',
       sampleRate: {
         performance: 1,
         resource: 1,
@@ -58,130 +20,56 @@
       debug: true
     });
   </script>
+  <style>
+    .test-section {
+      margin: 20px;
+      padding: 20px;
+      border: 1px solid #ccc;
+    }
+    .loading-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  </style>
 </head>
 <body>
   <!-- 白屏测试 -->
-  <div id="loading" class="loading-container">
-    Loading...
-  </div>
+  <div id="app"></div>
 
-  <!-- 延迟内容测试 -->
-  <div id="delayed-content" class="delayed-content">
-    <h1>Network Monitor Test Page</h1>
-    <p>This content will appear after 3 seconds</p>
-  </div>
 
-  <!-- 资源加载测试 -->
-  <div id="resource-test">
-    <h2>Resource Loading Test</h2>
-    <!-- 正常图片 -->
-    <img src="https://picsum.photos/200/300" alt="Normal image">
-    <!-- 404图片 -->
-    <img src="https://picsum.photos/non-existent-image.jpg" alt="404 image">
-    <!-- 大图片 -->
-    <img src="https://picsum.photos/2000/3000" alt="Large image">
-  </div>
-
-  <!-- HTTP请求测试 -->
-  <div id="http-test">
-    <h2>HTTP Request Test</h2>
-    <button onclick="testHttpRequest()">Test Normal Request</button>
-    <button onclick="testHttpError()">Test 404 Request</button>
-    <button onclick="testSlowRequest()">Test Slow Request</button>
-  </div>
-
-  <!-- JS错误测试 -->
-  <div id="error-test">
-    <h2>Error Test</h2>
-    <button onclick="triggerSyntaxError()">Syntax Error</button>
-    <button onclick="triggerTypeError()">Type Error</button>
-    <button onclick="triggerReferenceError()">Reference Error</button>
-    <button onclick="triggerPromiseError()">Promise Error</button>
-    <button onclick="triggerAsyncError()">Async Error</button>
-  </div>
-
-  <!-- 性能测试 -->
-  <div id="performance-test">
-    <h2>Performance Test</h2>
-    <button onclick="testHeavyComputation()">Heavy Computation</button>
-    <button onclick="testMemoryLeak()">Memory Leak</button>
-    <div class="heavy-animation"></div>
-  </div>
-
-  <!-- 布局偏移测试 -->
-  <div id="layout-test">
-    <h2>Layout Shift Test</h2>
-    <div class="layout-shift">Initial content</div>
-    <button onclick="triggerLayoutShift()">Trigger Layout Shift</button>
-  </div>
 
   <script>
-    // 模拟延迟显示内容
+    // 模拟白屏
     setTimeout(() => {
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('delayed-content').style.opacity = '1';
+      // 3秒后才加载内容
+      document.getElementById('app').innerHTML = `
+        <div class="test-section">
+          <h2>性能指标测试</h2>
+          <button onclick="triggerLongTask()">触发长任务</button>
+          <button onclick="triggerLayoutShift()">触发布局偏移</button>
+        </div>
+      `;
     }, 3000);
 
-    // HTTP请求测试
-    function testHttpRequest() {
-      fetch('http://localhost:3000/api/test')
-        .then(response => response.json())
-        .catch(error => console.error(error));
+    // 模拟长任务
+    function triggerLongTask() {
+      const start = Date.now();
+      while (Date.now() - start < 100) {
+        // 执行耗时操作
+      }
     }
 
-    function testHttpError() {
-      fetch('http://localhost:3000/api/non-existent')
-        .then(response => response.json())
-        .catch(error => console.error(error));
-    }
-
-    function testSlowRequest() {
-      fetch('http://localhost:3000/api/slow')
-        .then(response => response.json())
-        .catch(error => console.error(error));
-    }
-
-    // 错误测试
-    function triggerSyntaxError() {
-      eval('const let = 1;');
-    }
-
-    function triggerTypeError() {
-      const obj = null;
-      obj.someMethod();
-    }
-
-    function triggerReferenceError() {
-      nonExistentFunction();
-    }
-
-    function triggerPromiseError() {
-      new Promise((resolve, reject) => {
-        reject(new Error('Promise rejected'));
-      });
-    }
-
-    async function triggerAsyncError() {
-      await Promise.reject(new Error('Async function error'));
-    }
-
-    // 性能测试
-    function testHeavyComputation() {
-      const arr = new Array(1000000).fill(1);
-      arr.sort(() => Math.random() - 0.5);
-    }
-
-    let leakedArray = [];
-    function testMemoryLeak() {
-      const largeObject = new Array(1000000).fill('memory leak test');
-      leakedArray.push(largeObject);
-    }
-
-    // 布局偏移测试
+    // 模拟布局偏移
     function triggerLayoutShift() {
-      const layoutShift = document.querySelector('.layout-shift');
-      layoutShift.style.height = '200px';
-      layoutShift.innerHTML = 'Content changed causing layout shift';
+      const div = document.createElement('div');
+      div.style.height = '100px';
+      document.body.insertBefore(div, document.body.firstChild);
     }
   </script>
 </body>
