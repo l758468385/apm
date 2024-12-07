@@ -95,5 +95,10 @@ export class WebVitalsObserver extends BaseObserver {
     this.observers.forEach(observer => observer.disconnect());
     this.observers = [];
   }
+
+  public reset(): void {
+    this.disconnect();
+    this.observe();
+  }
 }
 

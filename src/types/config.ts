@@ -1,3 +1,5 @@
+export type RouteMode = 'hash' | 'history';
+
 export interface Config {
   aid: string;
   token: string;
@@ -12,4 +14,10 @@ export interface Config {
     blankScreen: number;
   };
   debug?: boolean;
+  userId?: string;
+  sdkVersion?: string;
+  env?: string;
+  release?: string;
+  routeMode?: RouteMode;
+  enableSPA?: boolean;
 } 
