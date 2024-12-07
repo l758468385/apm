@@ -16,6 +16,10 @@ export class HttpObserver extends BaseObserver {
       const startTime = Date.now();
       const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
 
+      if (url === this.config.reportUrl) {
+        return this.originalFetch.call(window, input, init);
+      }
+
       try {
         const response = await this.originalFetch.call(window, input, init);
         this.reportHttpEvent('fetch', url, response.status, startTime, Date.now(), init?.method || 'GET');
@@ -34,6 +38,7 @@ export class HttpObserver extends BaseObserver {
 
     interface ExtendedXMLHttpRequest extends XMLHttpRequest {
       _method?: string;
+      _url?: string;
     }
 
     window.XMLHttpRequest = function(this: ExtendedXMLHttpRequest) {
@@ -43,6 +48,7 @@ export class HttpObserver extends BaseObserver {
       const originalOpen = xhr.open;
       xhr.open = function(method: string, ...args: any[]) {
         xhr._method = method;
+        xhr._url = args[0];
         const [url = '', async = true, username, password] = args;
         const params = [method, url, async, username, password].slice(0, 5) as [
           string,
@@ -55,11 +61,15 @@ export class HttpObserver extends BaseObserver {
       };
 
       xhr.addEventListener('load', () => {
-        self.reportHttpEvent('xhr', xhr.responseURL, xhr.status, startTime, Date.now(), xhr._method || 'GET');
+        if (xhr._url !== self.config.reportUrl) {
+          self.reportHttpEvent('xhr', xhr.responseURL, xhr.status, startTime, Date.now(), xhr._method || 'GET');
+        }
       });
 
       xhr.addEventListener('error', () => {
-        self.reportHttpEvent('xhr', xhr.responseURL, 0, startTime, Date.now(), xhr._method || 'GET');
+        if (xhr._url !== self.config.reportUrl) {
+          self.reportHttpEvent('xhr', xhr.responseURL, 0, startTime, Date.now(), xhr._method || 'GET');
+        }
       });
 
       return xhr;
@@ -79,6 +89,7 @@ export class HttpObserver extends BaseObserver {
           duration: endTime - startTime
         }
       },
+      sample_rate: this.config.sampleRate.http,
       ts: Date.now()
     };
     this.reporter.push(event);

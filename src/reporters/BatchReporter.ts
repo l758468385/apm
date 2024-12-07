@@ -2,18 +2,79 @@
 
 import { Config } from '../types/config';
 import { Event } from '../types/event';
+import { getCookie, setCookie } from '../utils/cookie';
+import { uuidv4 } from '../utils/uuid';
+import md5 from 'md5';
 
 export class BatchReporter {
   private config: Config;
   private queue: Event[] = [];
   private timer: NodeJS.Timeout | null = null;
-  private readonly FLUSH_INTERVAL = 5000; // 5秒
+  private readonly FLUSH_INTERVAL = 5000;
 
   constructor(config: Config) {
     this.config = config;
+    this.initSession();
+  }
+
+  private initSession() {
+    if (!getCookie('lf_first_visit')) {
+      const timestamp = Date.now();
+      setCookie('lf_session_id', uuidv4());
+      setCookie('lf_first_visit', timestamp);
+      setCookie('lf_prev_visit', timestamp);
+      setCookie('lf_this_visit', timestamp);
+      setCookie('lf_session_count', 1);
+    }
+  }
+
+  private resetSession() {
+    const thisVisit = getCookie('lf_this_visit');
+    const sessionCount = getCookie('lf_session_count');
+    setCookie('lf_prev_visit', thisVisit);
+    const timestamp = Date.now();
+    setCookie('lf_this_visit', timestamp);
+    const totalCount = Number.isNaN(Number(sessionCount)) ? 1 : Number(sessionCount) + 1;
+    setCookie('lf_session_count', totalCount);
+  }
+
+  private getCommonInfo() {
+    const host = window.location.host;
+    const hashDomain = md5(host);
+    
+    let [sessionId, firstVisit, prevVisit, thisVisit, sessionCount] = [
+      getCookie('lf_session_id'),
+      getCookie('lf_first_visit'),
+      getCookie('lf_prev_visit'),
+      getCookie('lf_this_visit'),
+      getCookie('lf_session_count')
+    ];
+
+    if (Number.isNaN(Number(sessionCount)) || !Number(sessionCount)) {
+      sessionCount = '1';
+      setCookie('lf_session_count', 1);
+    }
+
+    return {
+      url: window.location.href,
+      pathname: window.location.pathname,
+      ts: Date.now(),
+      view_id: `${window.location.pathname.replace(/^\//, '')}_${Date.now()}`,
+      network_type: (navigator as any).connection?.effectiveType || '4g',
+      _lfutma: `${hashDomain}.${sessionId}.${firstVisit}.${prevVisit}.${thisVisit}.${sessionCount}`,
+      _lfutmb: `${hashDomain}.${thisVisit}.${Date.now()}`,
+      _lfutmc: hashDomain
+    };
   }
 
   public push(event: Event) {
+    const prevSendTime = Number(getCookie('lf_prev_send_time')) || Date.now();
+    const currentTime = Date.now();
+    if (currentTime - prevSendTime > 1800000) {
+      this.resetSession();
+    }
+    setCookie('lf_prev_send_time', currentTime);
+
     if (!this.shouldSample(event)) {
       return;
     }
@@ -23,7 +84,12 @@ export class BatchReporter {
     }
 
     this.queue.push(event);
-    this.scheduleFlush(event);
+
+    if (this.queue.length >= this.config.maxBatchSize) {
+      this.flush();
+    } else if (!this.timer) {
+      this.timer = setTimeout(() => this.flush(), this.FLUSH_INTERVAL);
+    }
   }
 
   private shouldSample(event: Event): boolean {
@@ -31,26 +97,10 @@ export class BatchReporter {
     return Math.random() < (sampleRate || 1);
   }
 
-  private scheduleFlush(event: Event) {
-    if (['js_error', 'resource_error', 'blank_screen'].includes(event.type)) {
-      this.flush(true);
-      return;
-    }
-
-    if (this.queue.length >= this.config.maxBatchSize) {
-      this.flush(false);
-      return;
-    }
-
-    if (!this.timer) {
-      this.timer = setTimeout(() => this.flush(false), this.FLUSH_INTERVAL);
-    }
-  }
-
-  private flush(highPriority: boolean = false) {
+  private flush() {
     if (this.queue.length === 0) return;
 
-    const data = this.queue.slice();
+    const events = this.queue.slice();
     this.queue = [];
 
     if (this.timer) {
@@ -58,31 +108,39 @@ export class BatchReporter {
       this.timer = null;
     }
 
-    if (highPriority) {
-      fetch(this.config.reportUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Aid': this.config.aid,
-          'X-Token': this.config.token
-        },
-        body: JSON.stringify(data)
-      }).catch(error => {
-        if (this.config.debug) {
-          console.error('[NetworkMonitor] Failed to send data:', error);
-        }
-      });
-    } else if (navigator.sendBeacon) {
-      navigator.sendBeacon(this.config.reportUrl, JSON.stringify(data));
-    }
+    const data = {
+      common: this.getCommonInfo(),
+      batch: events
+    };
+
+    fetch(this.config.reportUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Aid': this.config.aid,
+        'X-Token': this.config.token
+      },
+      body: JSON.stringify(data)
+    }).catch(error => {
+      if (this.config.debug) {
+        console.error('[NetworkMonitor] Failed to send data:', error);
+      }
+    });
   }
 
-  // 页面卸载时发送剩余数据
   setupUnloadHandler() {
     window.addEventListener('beforeunload', () => {
       if (this.queue.length > 0) {
-        navigator.sendBeacon('/collect', JSON.stringify(this.queue));
+        const data = {
+          common: this.getCommonInfo(),
+          batch: this.queue
+        };
+        navigator.sendBeacon(this.config.reportUrl, JSON.stringify(data));
       }
     });
+  }
+
+  public getConfig(): Config {
+    return this.config;
   }
 } 

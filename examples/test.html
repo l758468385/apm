@@ -4,7 +4,8 @@
   <title>Network Monitor Test</title>
   <script src="/examples/dist/network-monitor.min.js"></script>
   <style>
-   /* .loading-container {
+    /* 白屏测试样式 */
+    .loading-container {
       position: fixed;
       top: 0;
       left: 0;
@@ -14,16 +15,31 @@
       display: flex;
       justify-content: center;
       align-items: center;
-    }
-  */
-    /* 用于测试的样式 */
-    .hidden-content {
-      display: none;
+      z-index: 9999;
     }
 
     .delayed-content {
       opacity: 0;
       transition: opacity 1s;
+    }
+
+    /* 性能测试样式 */
+    .heavy-animation {
+      width: 100px;
+      height: 100px;
+      background: red;
+      animation: move 2s infinite;
+    }
+
+    @keyframes move {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(200px); }
+    }
+
+    /* 布局测试样式 */
+    .layout-shift {
+      margin-top: 20px;
+      height: 50px;
     }
   </style>
   <script>
@@ -33,10 +49,10 @@
       reportUrl: 'http://localhost:3000/collect',
       sampleRate: {
         performance: 1,
-        resource: 0.5,
+        resource: 1,
         resourceError: 1,
         jsError: 1,
-        http: 0.3,
+        http: 1,
         blankScreen: 1
       },
       debug: true
@@ -44,45 +60,128 @@
   </script>
 </head>
 <body>
-  <!-- 测试场景1: Loading遮罩导致的白屏 -->
+  <!-- 白屏测试 -->
   <div id="loading" class="loading-container">
     Loading...
   </div>
 
-  <!-- 测试场景2: 延迟显示内容 -->
+  <!-- 延迟内容测试 -->
   <div id="delayed-content" class="delayed-content">
     <h1>Network Monitor Test Page</h1>
     <p>This content will appear after 3 seconds</p>
   </div>
 
-  <!-- 测试场景3: JS报错 -->
-  <div id="error-content"></div>
-  
-  <!-- 修改: 添加几个不同类型的错误测试按钮 -->
-  <button onclick="triggerSyntaxError()">语法错误</button>
-  <button onclick="triggerTypeError()">类型错误</button>
-  <button onclick="triggerReferenceError()">引用错误</button>
-  <button onclick="triggerPromiseError()">Promise错误</button>
+  <!-- 资源加载测试 -->
+  <div id="resource-test">
+    <h2>Resource Loading Test</h2>
+    <!-- 正常图片 -->
+    <img src="https://picsum.photos/200/300" alt="Normal image">
+    <!-- 404图片 -->
+    <img src="https://picsum.photos/non-existent-image.jpg" alt="404 image">
+    <!-- 大图片 -->
+    <img src="https://picsum.photos/2000/3000" alt="Large image">
+  </div>
+
+  <!-- HTTP请求测试 -->
+  <div id="http-test">
+    <h2>HTTP Request Test</h2>
+    <button onclick="testHttpRequest()">Test Normal Request</button>
+    <button onclick="testHttpError()">Test 404 Request</button>
+    <button onclick="testSlowRequest()">Test Slow Request</button>
+  </div>
+
+  <!-- JS错误测试 -->
+  <div id="error-test">
+    <h2>Error Test</h2>
+    <button onclick="triggerSyntaxError()">Syntax Error</button>
+    <button onclick="triggerTypeError()">Type Error</button>
+    <button onclick="triggerReferenceError()">Reference Error</button>
+    <button onclick="triggerPromiseError()">Promise Error</button>
+    <button onclick="triggerAsyncError()">Async Error</button>
+  </div>
+
+  <!-- 性能测试 -->
+  <div id="performance-test">
+    <h2>Performance Test</h2>
+    <button onclick="testHeavyComputation()">Heavy Computation</button>
+    <button onclick="testMemoryLeak()">Memory Leak</button>
+    <div class="heavy-animation"></div>
+  </div>
+
+  <!-- 布局偏移测试 -->
+  <div id="layout-test">
+    <h2>Layout Shift Test</h2>
+    <div class="layout-shift">Initial content</div>
+    <button onclick="triggerLayoutShift()">Trigger Layout Shift</button>
+  </div>
 
   <script>
-    // 测试各种错误场景
+    // 模拟延迟显示内容
+    setTimeout(() => {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('delayed-content').style.opacity = '1';
+    }, 3000);
+
+    // HTTP请求测试
+    function testHttpRequest() {
+      fetch('http://localhost:3000/api/test')
+        .then(response => response.json())
+        .catch(error => console.error(error));
+    }
+
+    function testHttpError() {
+      fetch('http://localhost:3000/api/non-existent')
+        .then(response => response.json())
+        .catch(error => console.error(error));
+    }
+
+    function testSlowRequest() {
+      fetch('http://localhost:3000/api/slow')
+        .then(response => response.json())
+        .catch(error => console.error(error));
+    }
+
+    // 错误测试
     function triggerSyntaxError() {
-      eval('const let = 1;'); // 语法错误
+      eval('const let = 1;');
     }
 
     function triggerTypeError() {
       const obj = null;
-      obj.someMethod(); // 类型错误
+      obj.someMethod();
     }
 
     function triggerReferenceError() {
-      nonExistentFunction(); // 引用错误
+      nonExistentFunction();
     }
 
     function triggerPromiseError() {
       new Promise((resolve, reject) => {
-        reject(new Error('Promise rejected')); // Promise 错误
+        reject(new Error('Promise rejected'));
       });
+    }
+
+    async function triggerAsyncError() {
+      await Promise.reject(new Error('Async function error'));
+    }
+
+    // 性能测试
+    function testHeavyComputation() {
+      const arr = new Array(1000000).fill(1);
+      arr.sort(() => Math.random() - 0.5);
+    }
+
+    let leakedArray = [];
+    function testMemoryLeak() {
+      const largeObject = new Array(1000000).fill('memory leak test');
+      leakedArray.push(largeObject);
+    }
+
+    // 布局偏移测试
+    function triggerLayoutShift() {
+      const layoutShift = document.querySelector('.layout-shift');
+      layoutShift.style.height = '200px';
+      layoutShift.innerHTML = 'Content changed causing layout shift';
     }
   </script>
 </body>

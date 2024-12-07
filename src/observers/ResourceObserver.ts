@@ -8,7 +8,6 @@ export class ResourceObserver extends BaseObserver {
     console.log('ResourceObserver observe ');
     // 监听资源加载失败
     window.addEventListener('error', (event) => {
-      console.log('event',event)
       if (event.target instanceof HTMLElement) {
         const target = event.target as HTMLElement;
         if (target.tagName === 'IMG' || target.tagName === 'SCRIPT' || target.tagName === 'LINK') {
@@ -23,6 +22,7 @@ export class ResourceObserver extends BaseObserver {
                 duration: 0
               }
             },
+            sample_rate: this.config.sampleRate.resourceError,
             ts: Date.now()
           };
           this.reporter.push(event);
@@ -36,17 +36,21 @@ export class ResourceObserver extends BaseObserver {
         const entries = list.getEntries();
         entries.forEach(entry => {
           const resourceEntry = entry as PerformanceResourceTiming;
-          const event: Event = {
-            type: 'resource',
-            payload: {
-              type: resourceEntry.initiatorType,
-              url: resourceEntry.name,
-              status_code: 200,
-              timing: resourceEntry.toJSON()
-            },
-            ts: Date.now()
-          };
-          this.reporter.push(event);
+          // 过滤掉 XHR 和 fetch 请求
+          if (resourceEntry.initiatorType !== 'xmlhttprequest' && resourceEntry.initiatorType !== 'fetch') {
+            const event: Event = {
+              type: 'resource',
+              payload: {
+                type: resourceEntry.initiatorType,
+                url: resourceEntry.name,
+                status_code: 200,
+                timing: resourceEntry.toJSON()
+              },
+              sample_rate: this.config.sampleRate.resource,
+              ts: Date.now()
+            };
+            this.reporter.push(event);
+          }
         });
       });
 

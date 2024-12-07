@@ -71,30 +71,33 @@ export class BlankScreenObserver extends BaseObserver {
   }
 
   public observe(): void {
-    // 修改：使用 MutationObserver 来监听 DOM 变化
-    const observer = new MutationObserver(() => {
-      // 清除之前的定时器
-      if (this.timer) {
-        window.clearTimeout(this.timer);
-      }
-      // 重新检测
-      this.check();
-    });
+    const startObserve = () => {
+      if (document.body) {
+        const observer = new MutationObserver(() => {
+          if (this.timer) {
+            window.clearTimeout(this.timer);
+          }
+          this.check();
+        });
 
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      characterData: true
-    });
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          characterData: true
+        });
 
-    // 初始检测
-    if (document.readyState === 'interactive' || document.readyState === 'complete') {
-      this.check();
-    } else {
-      window.addEventListener('DOMContentLoaded', () => {
+        // 初始检测
         this.check();
-      });
+      }
+    };
+
+    // 如果 body 已经存在，直接开始观察
+    if (document.readyState === 'interactive' || document.readyState === 'complete') {
+      startObserve();
+    } else {
+      // 否则等待 DOM 加载完成
+      window.addEventListener('DOMContentLoaded', startObserve);
     }
   }
 
@@ -124,7 +127,6 @@ export class BlankScreenObserver extends BaseObserver {
   }
 
   private reportBlankScreen() {
-    // 获取中心点元素作为参考
     const centerElements = document.elementsFromPoint(
       window.innerWidth / 2,
       window.innerHeight / 2
@@ -139,6 +141,7 @@ export class BlankScreenObserver extends BaseObserver {
         viewportHeight: window.innerHeight,
         selector: centerElements.length ? this.getSelector(centerElements[0]) : null
       },
+      sample_rate: this.config.sampleRate.blankScreen,
       ts: Date.now()
     };
     this.reporter.push(event);
