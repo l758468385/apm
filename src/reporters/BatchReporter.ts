@@ -10,7 +10,7 @@ export class BatchReporter {
   private config: Config;
   private queue: Event[] = [];
   private timer: NodeJS.Timeout | null = null;
-  private readonly FLUSH_INTERVAL = 5000;
+  private readonly FLUSH_INTERVAL = 30000;
 
   constructor(config: Config) {
     this.config = config;
@@ -68,8 +68,6 @@ export class BatchReporter {
   }
 
   public push(event: Event) {
-   
-
     const prevSendTime = Number(getCookie('lf_prev_send_time')) || Date.now();
     const currentTime = Date.now();
     if (currentTime - prevSendTime > 1800000) {
@@ -89,8 +87,6 @@ export class BatchReporter {
 
     if (this.queue.length >= this.config.maxBatchSize) {
       this.flush();
-    } else if (!this.timer) {
-      this.timer = setTimeout(() => this.flush(), this.FLUSH_INTERVAL);
     }
   }
 
@@ -104,11 +100,6 @@ export class BatchReporter {
 
     const events = this.queue.slice();
     this.queue = [];
-
-    if (this.timer) {
-      clearTimeout(this.timer);
-      this.timer = null;
-    }
 
     const data = {
       common: this.getCommonInfo(),

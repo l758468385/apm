@@ -2,9 +2,11 @@
 <html>
 <head>
   <title>性能监控测试页面</title>
+  <!-- 本地测试 -->
   <script src="/dist/network-monitor.min.js"></script>
+  <!-- 线上测试 -->
+  <!-- <script src="https://cartsee-apps.oss-us-east-1.aliyuncs.com/feature/4980271549/1b7a4f/network-monitor.min.js"></script> -->
   <script>
-    // 初始化监控
     networkMonitor.init({
       aid: 'test-aid',
       token: 'test-token',
@@ -42,34 +44,110 @@
   <!-- 白屏测试 -->
   <div id="app"></div>
 
-
-
   <script>
     // 模拟白屏
     setTimeout(() => {
-      // 3秒后才加载内容
       document.getElementById('app').innerHTML = `
         <div class="test-section">
           <h2>性能指标测试</h2>
-          <button onclick="triggerLongTask()">触发长任务</button>
-          <button onclick="triggerLayoutShift()">触发布局偏移</button>
+          <div>
+            <h3>长任务测试</h3>
+            <button onclick="triggerLongTask()">触发长任务</button>
+            <button onclick="triggerLongTaskAsync()">触发异步长任务</button>
+          </div>
+
+          <div>
+            <h3>布局偏移测试</h3>
+            <button onclick="triggerLayoutShift()">触发布局偏移</button>
+          </div>
+
+          <div>
+            <h3>资源加载错误测试</h3>
+            <button onclick="loadErrorImage()">加载错误图片</button>
+            <button onclick="loadErrorScript()">加载错误脚本</button>
+          </div>
+
+          <div>
+            <h3>JS错误测试</h3>
+            <button onclick="triggerError()">触发JS错误</button>
+            <button onclick="triggerPromiseError()">触发Promise错误</button>
+          </div>
+
+          <div>
+            <h3>HTTP请求测试</h3>
+            <button onclick="sendSuccessRequest()">发送成功请求</button>
+            <button onclick="sendFailRequest()">发送失败请求</button>
+          </div>
         </div>
       `;
     }, 3000);
 
-    // 模拟长任务
+    // 长任务测试
     function triggerLongTask() {
       const start = Date.now();
       while (Date.now() - start < 100) {
         // 执行耗时操作
+        Math.random() * Math.random();
       }
     }
 
-    // 模拟布局偏移
+    function triggerLongTaskAsync() {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          triggerLongTask();
+          resolve();
+        }, 0);
+      });
+    }
+
+    // 布局偏移测试
     function triggerLayoutShift() {
       const div = document.createElement('div');
       div.style.height = '100px';
+      div.style.backgroundColor = '#f0f0f0';
+      div.textContent = '布局偏移测试';
       document.body.insertBefore(div, document.body.firstChild);
+    }
+
+    // 资源加载错误测试
+    function loadErrorImage() {
+      const img = document.createElement('img');
+      img.src = 'https://example.com/not-exist.jpg';
+      document.body.appendChild(img);
+    }
+
+    function loadErrorScript() {
+      const script = document.createElement('script');
+      script.src = 'https://example.com/not-exist.js';
+      document.body.appendChild(script);
+    }
+
+    // JS错误测试
+    function triggerError() {
+      throw new Error('这是一个测试错误');
+    }
+
+    function triggerPromiseError() {
+      Promise.reject(new Error('这是一个Promise错误'));
+    }
+
+    // HTTP请求测试
+    async function sendSuccessRequest() {
+      try {
+        const response = await fetch('http://localhost:3333/health');
+        const data = await response.json();
+        console.log('请求成功:', data);
+      } catch (error) {
+        console.error('请求失败:', error);
+      }
+    }
+
+    async function sendFailRequest() {
+      try {
+        await fetch('http://localhost:3333/not-exist');
+      } catch (error) {
+        console.error('请求失败:', error);
+      }
     }
   </script>
 </body>
