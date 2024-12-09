@@ -1,16 +1,23 @@
-import { BatchReporter } from '../reporters/BatchReporter';
-import { BaseObserver } from './BaseObserver';
-import { Event } from '../types/event';
+import { BatchReporter } from "../reporters/BatchReporter";
+import { BaseObserver } from "./BaseObserver";
+import { ReportData } from "../types/report";
 
 export class BlankScreenObserver extends BaseObserver {
   private timer: number | null = null;
   private mutationObserver: MutationObserver | null = null;
   private checkPoints: { x: number; y: number }[] = [];
-  private wrapperElements = ['html', 'body', '#app', '#root', '.container', '.content'];
+  private wrapperElements = [
+    "html",
+    "body",
+    "#app",
+    "#root",
+    ".container",
+    ".content",
+  ];
   private emptyPoints = 0;
   private hasReported = false;
   private checkCount = 0;
-  private readonly MAX_CHECK_TIMES = 5;  // 最多检测5次
+  private readonly MAX_CHECK_TIMES = 5; // 最多检测5次
 
   constructor(reporter: BatchReporter) {
     super(reporter);
@@ -23,21 +30,27 @@ export class BlankScreenObserver extends BaseObserver {
       // 横向采样点
       this.checkPoints.push({
         x: (window.innerWidth * i) / 10,
-        y: window.innerHeight / 2
+        y: window.innerHeight / 2,
       });
       // 纵向采样点
       this.checkPoints.push({
         x: window.innerWidth / 2,
-        y: (window.innerHeight * i) / 10
+        y: (window.innerHeight * i) / 10,
       });
     }
   }
 
   private getSelector(element: Element): string {
     if (element.id) {
-      return '#' + element.id;
+      return "#" + element.id;
     } else if (element.className) {
-      return '.' + element.className.split(' ').filter(item => !!item).join('.');
+      return (
+        "." +
+        element.className
+          .split(" ")
+          .filter((item) => !!item)
+          .join(".")
+      );
     }
     return element.tagName.toLowerCase();
   }
@@ -88,7 +101,7 @@ export class BlankScreenObserver extends BaseObserver {
     const startObserve = () => {
       if (document.body) {
         // 等待资源加载完成后再开始检测
-        window.addEventListener('load', () => {
+        window.addEventListener("load", () => {
           this.mutationObserver = new MutationObserver(() => {
             // 使用防抖，避免频繁触发
             if (this.timer) {
@@ -102,7 +115,7 @@ export class BlankScreenObserver extends BaseObserver {
             childList: true,
             subtree: true,
             attributes: true,
-            characterData: true
+            characterData: true,
           });
 
           // 初始检测
@@ -111,10 +124,10 @@ export class BlankScreenObserver extends BaseObserver {
       }
     };
 
-    if (document.readyState === 'complete') {
+    if (document.readyState === "complete") {
       startObserve();
     } else {
-      window.addEventListener('load', startObserve);
+      window.addEventListener("load", startObserve);
     }
   }
 
@@ -132,18 +145,20 @@ export class BlankScreenObserver extends BaseObserver {
   // 新增：判断是否为有效内容
   private isValidContent(element: Element): boolean {
     const styles = window.getComputedStyle(element);
-    const hasText = element.textContent ? element.textContent.trim().length > 0 : false;
-    
+    const hasText = element.textContent
+      ? element.textContent.trim().length > 0
+      : false;
+
     return (
-      element.tagName !== 'SCRIPT' &&
-      element.tagName !== 'STYLE' &&
-      styles.display !== 'none' &&
-      styles.visibility !== 'hidden' &&
-      styles.opacity !== '0' &&
-      (hasText || 
-       element.tagName === 'IMG' || 
-       element.tagName === 'CANVAS' ||
-       element.tagName === 'SVG')
+      element.tagName !== "SCRIPT" &&
+      element.tagName !== "STYLE" &&
+      styles.display !== "none" &&
+      styles.visibility !== "hidden" &&
+      styles.opacity !== "0" &&
+      (hasText ||
+        element.tagName === "IMG" ||
+        element.tagName === "CANVAS" ||
+        element.tagName === "SVG")
     );
   }
 
@@ -153,18 +168,20 @@ export class BlankScreenObserver extends BaseObserver {
       window.innerHeight / 2
     );
 
-    const event: Event = {
-      type: 'blank_screen',
+    const reportData: ReportData = {
+      type: "blank_screen",
       payload: {
         url: window.location.href,
         emptyPoints: this.emptyPoints,
         viewportWidth: window.innerWidth,
         viewportHeight: window.innerHeight,
-        selector: centerElements.length ? this.getSelector(centerElements[0]) : null
+        selector: centerElements.length
+          ? this.getSelector(centerElements[0])
+          : null,
       },
-      sample_rate: this.config.sampleRate.blankScreen,
-      ts: Date.now()
+      sample_rate: this.config.sampleRate.blank_screen,
+      ts: Date.now(),
     };
-    this.reporter.push(event);
+    this.reporter.push(reportData);
   }
-} 
+}

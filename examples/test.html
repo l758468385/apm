@@ -1,53 +1,82 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>性能监控测试页面</title>
-  <!-- 本地测试 -->
-  <script src="/dist/network-monitor.min.js"></script>
-  <!-- 线上测试 -->
-  <!-- <script src="https://cartsee-apps.oss-us-east-1.aliyuncs.com/feature/4980271549/1b7a4f/network-monitor.min.js"></script> -->
-  <script>
-    networkMonitor.init({
-      aid: 'test-aid',
-      token: 'test-token',
-      reportUrl: 'http://localhost:3333/collect',
-      sampleRate: {
-        performance: 1,
-        resource: 1,
-        resourceError: 1,
-        jsError: 1,
-        http: 1,
-        blankScreen: 1
-      },
-      debug: true
-    });
-  </script>
-  <style>
-    .test-section {
-      margin: 20px;
-      padding: 20px;
-      border: 1px solid #ccc;
-    }
-    .loading-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-  </style>
-</head>
-<body>
-  <!-- 白屏测试 -->
-  <div id="app"></div>
+  <head>
+    <title>性能监控测试页面</title>
+    <!-- 本地测试 -->
+    <script src="/dist/network-monitor.min.js"></script>
+    <!-- 线上测试 -->
+    <!-- <script src="https://cartsee-apps.oss-us-east-1.aliyuncs.com/feature/4980271549/1b7a4f/network-monitor.min.js"></script> -->
+    <script>
+      networkMonitor.init({
+        aid: "test-aid",
+        token: "test-token",
+        reportUrl: "http://localhost:3333/collect",
+        sampleRate: {
+          pv: 1,
+          performance: 1,
+          performance_timing: 1,
+          resource: 1,
+          js_error: 1,
+          http: 1,
+          blank_screen: 1,
+        },
+        debug: true,
+        enableSPA: true,
+        routeMode: 'history'
+      });
+    </script>
 
-  <script>
-    // 模拟白屏
-    setTimeout(() => {
-      document.getElementById('app').innerHTML = `
+    <!-- 
+<script>
+  !function(l, f, n, a) {
+      if (l.lfq) return;
+      a = l.lfq = function() {
+          a.callMethod ?
+              a.callMethod.apply(a, arguments) : a.queue.push(arguments)
+      };
+      a.queue = [];
+      a.version = '1.0';
+      var s = f.createElement('script');
+      s.async = !0;
+      s.src = n;
+      var h = f.getElementsByTagName('script')[0];
+      h.parentNode.insertBefore(s, h)
+  }(window, document, "https://d2n92a4bi8klzf.cloudfront.net/js/lfEvent/lfEvent.js");
+  lfq('init', 'lfna-15357687', {
+      send_page_view:true,
+      send_performance:true,
+      send_outbound:true,
+      send_scroll:true,
+      send_search_result:true,
+      user_id: '66666666',
+    })
+</script> -->
+    <style>
+      .test-section {
+        margin: 20px;
+        padding: 20px;
+        border: 1px solid #ccc;
+      }
+      .loading-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 白屏测试 -->
+    <div id="app"></div>
+
+    <script>
+      // 模拟白屏
+      setTimeout(() => {
+        document.getElementById("app").innerHTML = `
         <div class="test-section">
           <h2>性能指标测试</h2>
           <div>
@@ -80,75 +109,75 @@
           </div>
         </div>
       `;
-    }, 3000);
+      }, 3000);
 
-    // 长任务测试
-    function triggerLongTask() {
-      const start = Date.now();
-      while (Date.now() - start < 100) {
-        // 执行耗时操作
-        Math.random() * Math.random();
+      // 长任务测试
+      function triggerLongTask() {
+        const start = Date.now();
+        while (Date.now() - start < 100) {
+          // 执行耗时操作
+          Math.random() * Math.random();
+        }
       }
-    }
 
-    function triggerLongTaskAsync() {
-      return new Promise(resolve => {
-        setTimeout(() => {
-          triggerLongTask();
-          resolve();
-        }, 0);
-      });
-    }
-
-    // 布局偏移测试
-    function triggerLayoutShift() {
-      const div = document.createElement('div');
-      div.style.height = '100px';
-      div.style.backgroundColor = '#f0f0f0';
-      div.textContent = '布局偏移测试';
-      document.body.insertBefore(div, document.body.firstChild);
-    }
-
-    // 资源加载错误测试
-    function loadErrorImage() {
-      const img = document.createElement('img');
-      img.src = 'https://example.com/not-exist.jpg';
-      document.body.appendChild(img);
-    }
-
-    function loadErrorScript() {
-      const script = document.createElement('script');
-      script.src = 'https://example.com/not-exist.js';
-      document.body.appendChild(script);
-    }
-
-    // JS错误测试
-    function triggerError() {
-      throw new Error('这是一个测试错误');
-    }
-
-    function triggerPromiseError() {
-      Promise.reject(new Error('这是一个Promise错误'));
-    }
-
-    // HTTP请求测试
-    async function sendSuccessRequest() {
-      try {
-        const response = await fetch('http://localhost:3333/health');
-        const data = await response.json();
-        console.log('请求成功:', data);
-      } catch (error) {
-        console.error('请求失败:', error);
+      function triggerLongTaskAsync() {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            triggerLongTask();
+            resolve();
+          }, 0);
+        });
       }
-    }
 
-    async function sendFailRequest() {
-      try {
-        await fetch('http://localhost:3333/not-exist');
-      } catch (error) {
-        console.error('请求失败:', error);
+      // 布局偏移测试
+      function triggerLayoutShift() {
+        const div = document.createElement("div");
+        div.style.height = "100px";
+        div.style.backgroundColor = "#f0f0f0";
+        div.textContent = "布局偏移测试";
+        document.body.insertBefore(div, document.body.firstChild);
       }
-    }
-  </script>
-</body>
-</html> 
+
+      // 资源加载错误测试
+      function loadErrorImage() {
+        const img = document.createElement("img");
+        img.src = "https://example.com/not-exist.jpg";
+        document.body.appendChild(img);
+      }
+
+      function loadErrorScript() {
+        const script = document.createElement("script");
+        script.src = "https://example.com/not-exist.js";
+        document.body.appendChild(script);
+      }
+
+      // JS错误测试
+      function triggerError() {
+        throw new Error("这是一个测试错误");
+      }
+
+      function triggerPromiseError() {
+        Promise.reject(new Error("这是一个Promise错误"));
+      }
+
+      // HTTP请求测试
+      async function sendSuccessRequest() {
+        try {
+          const response = await fetch("http://localhost:3333/health");
+          const data = await response.json();
+          console.log("请求成功:", data);
+        } catch (error) {
+          console.error("请求失败:", error);
+        }
+      }
+
+      async function sendFailRequest() {
+        try {
+          await fetch("http://localhost:3333/not-exist");
+        } catch (error) {
+          console.error("请求失败:", error);
+        }
+      }
+    </script>
+  </body>
+</html>

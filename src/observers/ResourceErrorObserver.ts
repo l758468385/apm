@@ -39,19 +39,23 @@ export class ResourceErrorObserver extends BaseObserver {
             serverTiming: resourceTiming?.serverTiming || []
           };
 
-          this.reporter.push({
-            type: 'resource_error',
-            payload: {
-              type: target.tagName.toLowerCase(),
-              url: url,
-              status_code: 0,
-              timing
-            },
-            sample_rate: this.config.sampleRate.resourceError,
-            ts: Date.now()
-          });
+          this.reportResourceError(url, target, timing);
         }
       }
     }, true);
+  }
+
+  private reportResourceError(url: string, target: HTMLElement, timing: ResourceTimingData) {
+    this.reporter.push({
+      type: 'resource_error',
+      payload: {
+        type: target.tagName.toLowerCase(),
+        url: url,
+        status_code: 0,
+        timing
+      },
+      sample_rate: this.config.sampleRate.resource_error,
+      ts: Date.now()
+    });
   }
 } 

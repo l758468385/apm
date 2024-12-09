@@ -8,6 +8,7 @@ import {
   ErrorObserver,
   HttpObserver,
   BlankScreenObserver,
+  PageViewObserver,
 } from "../observers";
 import { BaseObserver } from "../observers/BaseObserver";
 
@@ -21,10 +22,10 @@ export class NetworkMonitor {
     this.config = config;
     this.reporter = new BatchReporter(config);
     this.initObservers();
-    
+
     // 保存实例到全局
     window.__NETWORK_MONITOR_INSTANCE__ = this;
-    
+
     // SPA 路由监听
     if (this.config.enableSPA) {
       this.initRouteListener();
@@ -32,30 +33,30 @@ export class NetworkMonitor {
   }
 
   private initRouteListener() {
-    if (this.config.routeMode === 'hash') {
-      window.addEventListener('hashchange', this.handleRouteChange.bind(this));
+    if (this.config.routeMode === "hash") {
+      window.addEventListener("hashchange", this.handleRouteChange.bind(this));
     } else {
       // history 模式
       const originalPushState = window.history.pushState;
       const originalReplaceState = window.history.replaceState;
-      
-      window.history.pushState = function(...args) {
+
+      window.history.pushState = function (...args) {
         originalPushState.apply(this, args);
-        window.dispatchEvent(new Event('popstate'));
+        window.dispatchEvent(new Event("popstate"));
       };
-      
-      window.history.replaceState = function(...args) {
+
+      window.history.replaceState = function (...args) {
         originalReplaceState.apply(this, args);
-        window.dispatchEvent(new Event('popstate'));
+        window.dispatchEvent(new Event("popstate"));
       };
-      
-      window.addEventListener('popstate', this.handleRouteChange.bind(this));
+
+      window.addEventListener("popstate", this.handleRouteChange.bind(this));
     }
   }
 
   private handleRouteChange() {
     // 路由变化时重新收集性能数据
-    this.observers.forEach(observer => {
+    this.observers.forEach((observer) => {
       if (observer instanceof WebVitalsObserver) {
         observer.reset();
       }
@@ -68,6 +69,7 @@ export class NetworkMonitor {
 
   private initObservers() {
     this.observers = [
+      new PageViewObserver(this.reporter),
       new WebVitalsObserver(this.reporter),
       new NavigationTimingObserver(this.reporter),
       new ResourceLoadObserver(this.reporter),
@@ -88,12 +90,7 @@ export class NetworkMonitor {
       try {
         observer.observe();
       } catch (error) {
-        if (this.config.debug) {
-          console.error(
-            "[NetworkMonitor] Failed to initialize observer:",
-            error
-          );
-        }
+        console.error("[NetworkMonitor] Failed to initialize observer:", error);
       }
     });
   }

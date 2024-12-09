@@ -6,12 +6,14 @@ export interface Config {
   reportUrl: string;
   maxBatchSize: number;
   sampleRate: {
+    pv: number;
     performance: number;
+    performance_timing: number;
     resource: number;
-    resourceError: number;
-    jsError: number;
+    resource_error:number;
+    js_error: number;
     http: number;
-    blankScreen: number;
+    blank_screen: number;
   };
   debug?: boolean;
   userId?: string;
