@@ -98,16 +98,18 @@ export class BlankScreenObserver extends BaseObserver {
   }
 
   public observe(): void {
+    
     const startObserve = () => {
       if (document.body) {
-        // 等待资源加载完成后再开始检测
+        // 立即进行第一次检测
+        this.check();
+        
+        // 然后在 load 事件后再次检测
         window.addEventListener("load", () => {
           this.mutationObserver = new MutationObserver(() => {
-            // 使用防抖，避免频繁触发
             if (this.timer) {
               window.clearTimeout(this.timer);
             }
-            // 延迟 500ms 再检测，避免瞬态变化
             this.timer = window.setTimeout(() => this.check(), 500);
           });
 
@@ -118,7 +120,7 @@ export class BlankScreenObserver extends BaseObserver {
             characterData: true,
           });
 
-          // 初始检测
+          // load 后再检测一次
           this.check();
         });
       }
@@ -167,7 +169,7 @@ export class BlankScreenObserver extends BaseObserver {
       window.innerWidth / 2,
       window.innerHeight / 2
     );
-
+    
     const reportData: ReportData = {
       type: "blank_screen",
       payload: {

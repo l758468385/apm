@@ -60,9 +60,7 @@ export class BatchReporter {
         // 使用 keepalive 确保数据在页面卸载时也能发送
         keepalive: true,
       }).catch(error => {
-        if (this.config.debug) {
-          console.error('[BatchReporter] Failed to send data:', error);
-        }
+        console.error('[BatchReporter] Failed to send data:', error);
       });
     }
   }
